@@ -1,7 +1,7 @@
 FROM golang:1.21-alpine AS builder
 
 # Install build dependencies for SQLite
-RUN apk add --no-cache gcc musl-dev sqlite-dev
+RUN apk add --no-cache gcc musl-dev sqlite-dev git
 
 WORKDIR /app
 
