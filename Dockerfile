@@ -1,18 +1,19 @@
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 # Install build dependencies for SQLite
 RUN apk add --no-cache gcc musl-dev sqlite-dev git
 
 WORKDIR /app
 
-# Copy go.mod only first, generate go.sum inside container
-COPY go.mod ./
-RUN go mod download && go mod tidy || true
+# Copy module files and download dependencies
+# GONOSUMDB=* and GOFLAGS=-mod=mod allow go.sum to be populated at build time
+COPY go.mod go.sum* ./
+RUN GONOSUMDB=* GOFLAGS=-mod=mod go mod download
 
 COPY . .
 
-# Re-run tidy with full source available, then build
-RUN go mod tidy && CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o bot .
+# Build the binary
+RUN CGO_ENABLED=1 GOOS=linux GONOSUMDB=* GOFLAGS=-mod=mod go build -ldflags="-w -s" -o bot .
 
 # Final stage
 FROM alpine:3.19
