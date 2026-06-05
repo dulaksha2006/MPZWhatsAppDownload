@@ -5,14 +5,14 @@ RUN apk add --no-cache gcc musl-dev sqlite-dev
 
 WORKDIR /app
 
-# Copy go files
-COPY go.mod go.sum ./
-RUN go mod download
+# Copy go.mod only first, generate go.sum inside container
+COPY go.mod ./
+RUN go mod download && go mod tidy || true
 
 COPY . .
 
-# Build binary with CGO enabled (required for sqlite3)
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o bot .
+# Re-run tidy with full source available, then build
+RUN go mod tidy && CGO_ENABLED=1 GOOS=linux go build -ldflags="-w -s" -o bot .
 
 # Final stage
 FROM alpine:3.19
